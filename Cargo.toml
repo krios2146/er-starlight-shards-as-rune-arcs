@@ -7,7 +7,6 @@ edition = "2024"
 fromsoftware-shared = { git = "https://github.com/vswarte/fromsoftware-rs.git" }
 eldenring = { git = "https://github.com/vswarte/fromsoftware-rs.git" }
 pelite = "0.10.0"
-chrono = "0.4.42"
 
 [lib]
 crate-type = ["cdylib"]
