@@ -10,3 +10,4 @@ pelite = "0.10.0"
 
 [lib]
 crate-type = ["cdylib"]
+name = "remove_starlight_shards_vfx"

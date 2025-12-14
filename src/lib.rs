@@ -1,5 +1,5 @@
 use eldenring::{
-    cs::{CSEventFlagMan, CSTaskGroupIndex, CSTaskImp, EventFlag, WorldChrMan},
+    cs::{CSTaskGroupIndex, CSTaskImp, WorldChrMan},
     fd4::FD4TaskData,
     param::SP_EFFECT_PARAM_ST,
     util::system::wait_for_system_init,
@@ -18,7 +18,6 @@ use std::{
 };
 
 const STARLIGHT_SHARD_SPEFFECT_ID: i32 = 501290;
-const STARLIGHT_SHARD_SPEFFECT_EVENT_FLAG: u32 = 366520000;
 
 const SPEFFECTS_INDEX: usize = 15;
 
@@ -154,18 +153,9 @@ pub unsafe extern "C" fn DllMain(_hmodule: u64, reason: u32) -> bool {
                 else {
                     return
                 };
-                let Ok(event_flags_manager) = (unsafe { CSEventFlagMan::instance() })
-                else {
-                    return
-                };
 
-                let is_player_have_starlight_shard_speffect = main_player.chr_ins.special_effect.entries()
-                    .find(|e| e.param_id == STARLIGHT_SHARD_SPEFFECT_ID)
-                    .is_some();
                 let is_player_alive = main_player.chr_ins.module_container.data.hp > 0;
-                let is_starlight_shards_event_flag_active = unsafe { event_flags_manager.virtual_memory_flag.flag_blocks.as_mut().unwrap().get(EventFlag::from(STARLIGHT_SHARD_SPEFFECT_EVENT_FLAG)) };
 
-                // Run once on game load
                 if !is_starlight_shard_modded && is_player_alive {
                     let pe_view: PeView = get_pe_view();
                     let base_param_rva: usize = find_param_base_rva(pe_view);
@@ -177,27 +167,10 @@ pub unsafe extern "C" fn DllMain(_hmodule: u64, reason: u32) -> bool {
                         let starlight_shard_ptr: *const u64 = *speffect_map.get(&STARLIGHT_SHARD_SPEFFECT_ID).unwrap();
                         let starlight_shard_speffect_param: &mut SP_EFFECT_PARAM_ST = &mut *(starlight_shard_ptr as *mut SP_EFFECT_PARAM_ST);
 
-                        starlight_shard_speffect_param.set_effect_endurance(-1.0);
+                        starlight_shard_speffect_param.set_vfx_id(0);
 
                         is_starlight_shard_modded = true;
                     }
-                }
-
-                // Set event flag for persistent state save
-                if !is_starlight_shards_event_flag_active && is_player_have_starlight_shard_speffect {
-                    unsafe { event_flags_manager.virtual_memory_flag.flag_blocks.as_mut().unwrap().set(EventFlag::from(STARLIGHT_SHARD_SPEFFECT_EVENT_FLAG), true) };
-                }
-
-                // Apply Starlight Shards effect on game load if it was applied in previous session
-                if is_starlight_shards_event_flag_active && is_player_alive && !is_player_have_starlight_shard_speffect {
-                    main_player.chr_ins.apply_speffect(STARLIGHT_SHARD_SPEFFECT_ID, true);
-                }
-
-                // Remove on death
-                if !is_player_alive && is_player_have_starlight_shard_speffect {
-                    main_player.chr_ins.remove_speffect(STARLIGHT_SHARD_SPEFFECT_ID);
-                    unsafe { event_flags_manager.virtual_memory_flag.flag_blocks.as_mut().unwrap().set(EventFlag::from(STARLIGHT_SHARD_SPEFFECT_EVENT_FLAG), false) };
-                    return;
                 }
             },
             CSTaskGroupIndex::FrameBegin,
